@@ -1,0 +1,3 @@
+/usr/local/bin/TinyLex
+/usr/local/include/tinylex/header.h
+/usr/local/include/tinylex/implemenation.h
