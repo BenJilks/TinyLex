@@ -4,7 +4,7 @@
 
 int main()
 {
-    CGenerator generator;
+    CGenerator generator("test_project/tinylex.hpp");
     Parser parser("../test.tinylex");
     Lexer lexer(parser, generator);
 

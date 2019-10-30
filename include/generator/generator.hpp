@@ -20,6 +20,7 @@ protected:
     vector<pair<string, ExpressionTable*>> expressions;
     void write_string(string msg);
     void write_line(string line);
+    void write_file(string file_path);
 
 private:
     std::ofstream out_file;

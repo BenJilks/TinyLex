@@ -14,8 +14,11 @@ public:
     char next_char();
     string next_word();
 
+    inline bool is_eof() const { return eof_flag; }
+
 private:
     char look;
+    bool eof_flag;
     std::ifstream in;
 
 };

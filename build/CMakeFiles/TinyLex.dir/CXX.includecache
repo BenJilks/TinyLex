@@ -9,6 +9,8 @@
 ../include/expression.hpp
 parser.hpp
 ../include/parser.hpp
+vector
+-
 
 ../include/generator/generator.hpp
 expression.hpp
@@ -24,43 +26,13 @@ tuple
 generator.hpp
 ../include/generator/generator.hpp
 
-../include/lexer.hpp
-parser.hpp
-../include/parser.hpp
-expression.hpp
-../include/expression.hpp
-generator/generator.hpp
-../include/generator/generator.hpp
-tuple
--
-vector
--
-
 ../include/parser.hpp
 string
 -
 fstream
 -
 
-/home/benjilks/pain/TinyLex/source/TinyLex.cpp
-stdio.h
--
-lexer.hpp
-/home/benjilks/pain/TinyLex/source/lexer.hpp
-generator/generator_c.hpp
-/home/benjilks/pain/TinyLex/source/generator/generator_c.hpp
-
-/home/benjilks/pain/TinyLex/source/generator/generator.cpp
-generator/generator.hpp
-/home/benjilks/pain/TinyLex/source/generator/generator/generator.hpp
-iostream
--
-
 /home/benjilks/pain/TinyLex/source/generator/generator_c.cpp
 generator/generator_c.hpp
 /home/benjilks/pain/TinyLex/source/generator/generator/generator_c.hpp
-
-/home/benjilks/pain/TinyLex/source/lexer.cpp
-lexer.hpp
-/home/benjilks/pain/TinyLex/source/lexer.hpp
 

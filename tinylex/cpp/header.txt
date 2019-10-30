@@ -1,0 +1,25 @@
+
+    class Lexer
+    {
+    public:
+        Lexer(std::istream &stream);
+        Lexer(string file_path);
+        Token next();
+
+        inline bool is_eof() const { return eof_flag; }
+
+    private:
+        enum class MatchStatus
+        {
+            MATCH,
+            BLANK,
+            ERROR
+        };
+        MatchStatus next_match(Token &token);
+
+        std::istream &in;
+        std::ifstream file_in;
+        char back_log;
+        bool eof_flag;
+
+    };
