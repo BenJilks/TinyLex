@@ -10,45 +10,56 @@
 
     Lexer::MatchStatus Lexer::next_match(Token &token)
     {
-        int state = 0;
         int buffer_pointer = 0;
-        bool not_blank = false;
+        int types_left = STATE_COUNT;
+        memset(states, 0, STATE_COUNT * sizeof(int));
+        memset(last_states, 0, STATE_COUNT * sizeof(int));
 
-        for (int i = 0; i < Token::count; i++)
+        while (types_left > 0 && !eof_flag)
         {
-            state = 0;
-            buffer_pointer = 0;
-            do
+            char c = in.get();
+            back_log = c;
+            buffer_pointer++;
+            token.data += c;
+            if (c == EOF)
             {
-                if (buffer_pointer >= token.data.size())
+                eof_flag = true;
+                break;
+            }
+
+            for (int i = 0; i < STATE_COUNT; i++)
+            {
+                if (states[i] != -1)
                 {
-                    char next = in.get();
-                    if (next == EOF)
-                        eof_flag = true;
-                    token.data += next;
+                    states[i] = type_table[i][states[i] * 128 + c];
+                    if (states[i] == -1)
+                        types_left--;
                 }
+            }
 
-                char c = token.data[buffer_pointer++];
-                state = type_table[i][state * 128 + c];
-                back_log = c;
+            if (types_left > 0)
+                memcpy(last_states, states, STATE_COUNT * sizeof(int));
+        }
 
+        for (int i = 0; i < STATE_COUNT; i++)
+        {
+            if (last_states[i] != -1)
+            {
                 for (int j = 0; j < type_end_state_count[i]; j++)
                 {
-                    if (type_end_states[i][j] == state)
+                    if (type_end_states[i][j] == last_states[i])
                     {
+                        token.data.pop_back();
                         token.type = (Token::TokenType)i;
+                        token.type_name = type_names[i];
                         return Lexer::MatchStatus::MATCH;
                     }
                 }
-                
-                if (buffer_pointer > 1)
-                    not_blank = true;
-            } while(state != -1 && !eof_flag);
+            }
         }
 
-        return not_blank ? 
-            Lexer::MatchStatus::ERROR : 
-            Lexer::MatchStatus::BLANK;
+        // If no types match
+        return Lexer::MatchStatus::BLANK;
     }
 
     Token Lexer::next()

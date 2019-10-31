@@ -6,6 +6,9 @@ int main()
 {
     TinyScript::Lexer lexer("test.txt");
     while (!lexer.is_eof())
-        std::cout << lexer.next().data << std::endl;
+    {
+        TinyScript::Token token = lexer.next();
+        std::cout << token.data << " - " << token.type_name << std::endl;
+    }
     return 0;
 }

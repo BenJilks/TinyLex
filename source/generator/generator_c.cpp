@@ -21,6 +21,7 @@ void CGenerator::gen_expression(string name, ExpressionTable *exp)
 
 void CGenerator::gen_token_type()
 {
+    // Token struct
     write_line("\n\tstruct Token\n\t{");
     write_line("\t\tenum TokenType\n\t\t{");
     for (auto exp : expressions)
@@ -30,28 +31,39 @@ void CGenerator::gen_token_type()
     write_line("\n\t\tstatic const int count = " + std::to_string(expressions.size()) + ";");
     write_line("\t\tstring data;");
     write_line("\t\tTokenType type;");
+    write_line("\t\tconst char *type_name;");
     write_line("\t};");
+
+}
+
+void CGenerator::gen_for_each_type(string name, 
+    std::function<string(Expression)> func)
+{
+    write_string("\tstatic " + name + " = {");
+    for (auto exp : expressions)
+        write_string(func(exp) + ", ");
+    write_line("};");
 }
 
 void CGenerator::gen_type_table()
 {
     // Type tables
-    write_string("\n\tstatic char *type_table[] = {");
-    for (auto exp : expressions)
-        write_string(exp.first + ", ");
-    write_line("};");
+    write_line("\n\t#define STATE_COUNT " + std::to_string(expressions.size()));
 
-    // Type end states
-    write_string("\n\tstatic int *type_end_states[] = {");
-    for (auto exp : expressions)
-        write_string(exp.first + "_end_states, ");
-    write_line("};");
+    gen_for_each_type("char *type_table[]", [](Expression exp) -> string 
+        { return exp.first; });
+    
+    gen_for_each_type("int *type_end_states[]", [](Expression exp) -> string 
+        { return exp.first + "_end_states"; });
+    
+    gen_for_each_type("int type_end_state_count[]", [](Expression exp) -> string 
+        { return std::to_string(exp.second->get_end_states().size()); });
 
-    // Type end state counts
-    write_string("\n\tstatic int type_end_state_count[] = {");
-    for (auto exp : expressions)
-        write_string(std::to_string(exp.second->get_end_states().size()) + ", ");
-    write_line("};");
+    gen_for_each_type("const char *type_names[]", [](Expression exp) -> string 
+        { return "\"" + exp.first + "\""; });
+
+    gen_for_each_type("int states[]", [](Expression exp) -> string { return "0"; });
+    gen_for_each_type("int last_states[]", [](Expression exp) -> string { return "0"; });
 }
 
 void CGenerator::generate()
@@ -60,6 +72,7 @@ void CGenerator::generate()
     write_line("#include <string>");
     write_line("#include <iostream>");
     write_line("#include <fstream>");
+    write_line("#include <memory.h>");
     write_line("using std::string;");
 
     write_line("\nnamespace TinyScript\n{");

@@ -8,7 +8,7 @@ using std::vector;
 struct Transition
 {
     int to;
-    char value;
+    char value_min, value_max;
 };
 
 #define Node ExpressionTable::Node
@@ -26,6 +26,29 @@ Node *ExpressionTable::parse_sub_expression(Parser &parser, Node *parent)
     return node;
 }
 
+Node *ExpressionTable::parse_range(Parser &parser, Node *parent)
+{
+    Node *node = new Node;
+    node->parent = parent;
+    node->left = NULL;
+    node->right = NULL;
+    node->operation = OperationType::NONE;
+
+    char from, to;
+    while ((from = parser.next_char()) != ']' && !parser.is_eof())
+    {
+        parser.skip_white_space();
+        parser.next_char(); // '-'
+        parser.skip_white_space();
+        to = parser.next_char();
+        node->values.push_back(std::make_pair(from, to));
+        
+        parser.skip_white_space();
+    }
+
+    return node;
+}
+
 Node *ExpressionTable::parse_value(Parser &parser, Node *parent, char c)
 {
     // Read a single char as a value
@@ -34,27 +57,33 @@ Node *ExpressionTable::parse_value(Parser &parser, Node *parent, char c)
     node->left = NULL;
     node->right = NULL;
     node->operation = OperationType::NONE;
-    node->value = c;
+    node->values.push_back(std::make_pair(c, c));
     return node;
 }
 
 Node *ExpressionTable::parse_unary_op(Parser &parser, Node *node)
 {
-    OperationType op = OperationType::NONE;
-    switch (parser.get_look())
+    while (!parser.is_eof())
     {
-        case '?': op = OperationType::OPTIONAL;
-    }
+        OperationType op = OperationType::NONE;
+        switch (parser.get_look())
+        {
+            case '?': op = OperationType::OPTIONAL; break;
+            case '+': op = OperationType::ONE_OR_MORE; break;
+            case '*': op = OperationType::ANY; break;
+        }
 
-    if (op != OperationType::NONE)
-    {
+        if (op == OperationType::NONE)
+            break;
+        parser.next_char();
+
         Node *operation = new Node;
         operation->parent = node->parent;
         operation->left = node;
         operation->right = NULL;
         operation->operation = op;
         node->parent = operation;
-        return operation;
+        node = operation;
     }
 
     return node;
@@ -71,13 +100,14 @@ Node *ExpressionTable::parse_term(Parser &parser, Node *parent)
     switch (c)
     {
         case '(': node = parse_sub_expression(parser, parent); break;
+        case '[': node = parse_range(parser, parent); break;
         default: node = parse_value(parser, parent, c); break;
     }
 
     return parse_unary_op(parser, node);
 }
 
-#define IS_CHAR_VALUE(c) (isalnum(c) || (c) == '(')
+#define IS_CHAR_VALUE(c) (!isspace(c))
 #define IS_CHAR_FACTOR(c) ((c) == '|')
 
 Node *ExpressionTable::parse_operation(Node *left, Node *right, Node *parent, OperationType op)
@@ -148,7 +178,10 @@ public:
         for (State state : states)
         {
             for (Transition transition : state)
-                table[index * 128 + transition.value] = transition.to;
+            {
+                for (int i = transition.value_min; i <= transition.value_max; i++)
+                    table[index * 128 + i] = transition.to;
+            }
             index++;
         }
 
@@ -170,6 +203,8 @@ private:
             case OperationType::CONCAT: return compile_concat(node, from);
             case OperationType::OR: return compile_or(node, from);
             case OperationType::OPTIONAL: return compile_optional(node, from);
+            case OperationType::ONE_OR_MORE: return compile_one_or_more(node, from);
+            case OperationType::ANY: return compile_any(node, from);
             default: return compile_value(node, from);
         }
     }
@@ -177,15 +212,19 @@ private:
     vector<int> compile_value(Node *node, vector<int> from)
     {
         State state;
-        Transition transition;
 
-        transition.value = node->value;
-        transition.to = states.size();
-        for (int i : from)
-            states[i].push_back(transition);
+        for (auto range : node->values)
+        {
+            Transition transition;
+            transition.value_min = range.first;
+            transition.value_max = range.second;
+            transition.to = states.size();
+            for (int i : from)
+                states[i].push_back(transition);
+        }
 
         states.push_back(state);
-        return { transition.to };
+        return { (int)states.size() - 1 };
     }
 
     vector<int> compile_concat(Node *node, vector<int> from)
@@ -206,10 +245,27 @@ private:
     vector<int> compile_optional(Node *node, vector<int> from)
     {
         vector<int> option = compile_node(node->left, from);
-
-        Transition transition;
-        transition.to = option[0];
+        option.insert(option.end(), from.begin(), from.end());
         return option;
+    }
+
+    vector<int> compile_one_or_more(Node *node, vector<int> from)
+    {
+        vector<int> ends = compile_node(node->left, from);
+        for (Transition t : states[from[0]])
+        {
+            for (int end : ends)
+                states[end].push_back(t);
+        }
+
+        return ends;
+    }
+
+    vector<int> compile_any(Node *node, vector<int> from)
+    {
+        vector<int> ends = compile_one_or_more(node, from);
+        ends.insert(ends.end(), from.begin(), from.end());
+        return ends;
     }
 
 };

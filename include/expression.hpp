@@ -1,7 +1,9 @@
 #pragma once
 #include "parser.hpp"
 #include <vector>
+#include <tuple>
 using std::vector;
+using std::pair;
 
 class ExpressionTable
 {
@@ -18,7 +20,9 @@ public:
         NONE,
         CONCAT,
         OR,
-        OPTIONAL
+        OPTIONAL,
+        ONE_OR_MORE,
+        ANY
     };
 
     struct Node
@@ -26,7 +30,7 @@ public:
         Node *parent;
         Node *left, *right;
         OperationType operation;
-        char value;
+        vector<pair<char, char>> values;
     };
 
 private:
@@ -36,6 +40,7 @@ private:
 
     Node *parse_expression(Parser &parser, Node *parent);
     Node *parse_sub_expression(Parser &parser, Node *parent);
+    Node *parse_range(Parser &parser, Node *parent);
     Node *parse_value(Parser &parser, Node *parent, char c);
     Node *parse_unary_op(Parser &parser, Node *node);
     Node *parse_operation(Node *left, Node *right, Node *parent, OperationType op);

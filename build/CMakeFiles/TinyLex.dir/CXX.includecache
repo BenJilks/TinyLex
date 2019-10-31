@@ -11,6 +11,8 @@ parser.hpp
 ../include/parser.hpp
 vector
 -
+tuple
+-
 
 ../include/generator/generator.hpp
 expression.hpp
@@ -25,6 +27,8 @@ tuple
 ../include/generator/generator_c.hpp
 generator.hpp
 ../include/generator/generator.hpp
+functional
+-
 
 ../include/parser.hpp
 string
