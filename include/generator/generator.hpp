@@ -14,7 +14,7 @@ public:
     ~Generator();
 
     void add_expression(string name, ExpressionTable *expresstion);
-    virtual void generate() = 0;
+    virtual void generate(string project_name) = 0;
 
 protected:
     vector<pair<string, ExpressionTable*>> expressions;

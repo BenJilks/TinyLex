@@ -14,8 +14,15 @@ Parser::Parser(const char *file_path)
     eof_flag = false;
     column = 0;
     line = "";
-    next_char();
 
+    if (!in.good())
+    {
+        eof_flag = true;
+        error("Could not open file '" + string(file_path) + "'");
+        return;
+    }
+
+    next_char();
     LOG("Opened source file '%s'\n", file_path);
 }
 

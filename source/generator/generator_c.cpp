@@ -66,7 +66,7 @@ void CGenerator::gen_type_table()
     gen_for_each_type("int last_states[]", [](Expression exp) -> string { return "0"; });
 }
 
-void CGenerator::generate()
+void CGenerator::generate(string project_name)
 {
     write_line("#pragma once");
     write_line("#include <string>");
@@ -75,7 +75,7 @@ void CGenerator::generate()
     write_line("#include <memory.h>");
     write_line("using std::string;");
 
-    write_line("\nnamespace TinyScript\n{");
+    write_line("\nnamespace " + project_name + "\n{");
     gen_token_type();
     write_file("cpp_header.txt");
 

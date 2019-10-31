@@ -57,12 +57,13 @@ int main(int argc, char **argv)
     }
 
     CGenerator generator(out_file);
+    Lexer lexer(generator);
     for (string in : input_files)
     {
         Parser parser(in.c_str());
-        Lexer lexer(parser, generator);
+        lexer.parse(parser);
     }
 
-    generator.generate();
+    generator.generate(lexer.get_project_name());
     return 0;
 }

@@ -33,6 +33,7 @@ static bool file_exists(string name)
 
 static const char *search_paths[] =
 {
+    "",
     "/include/",
     "/usr/include/",
     "/usr/local/include/",
@@ -43,13 +44,22 @@ void Generator::write_file(string file_path)
     // Find template file path
     string file = "tinylex/" + file_path;
     string path = "";
+    bool found = false;
     for (int i = 0; i < sizeof(search_paths) / sizeof(char *); i++)
     {
         if (access((string(search_paths[i]) + file).c_str(), F_OK) != -1)
         {
             path = search_paths[i];
+            found = true;
             break;
         }
+    }
+
+    if (!found)
+    {
+        std::cout << "Error: Could not find template file '" << 
+            file_path << "'" << std::endl;
+        return;
     }
 
     // Open file and find its length

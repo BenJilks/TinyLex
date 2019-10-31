@@ -1,3 +1,4 @@
+project TestProject
 
 Comment         #.*\n
 Bool            (true)|(false)

@@ -10,7 +10,7 @@ public:
     CGenerator(string file_path) :
         Generator(file_path) {}
     
-    virtual void generate();
+    virtual void generate(string project_name);
 
 private:
     void gen_for_each_type(string name, 

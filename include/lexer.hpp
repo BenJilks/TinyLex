@@ -10,9 +10,14 @@ using std::pair;
 class Lexer
 {
 public:
-    Lexer(Parser &parser, Generator &generator);
+    Lexer(Generator &generator);
+    void parse(Parser &parser);
+
+    inline string get_project_name() const { return project_name == "" ? "TinyLex" : project_name; }
 
 private:
     void parse_statement(Parser &parser, Generator &generator);
+    Generator &generator;
+    string project_name;
 
 };
