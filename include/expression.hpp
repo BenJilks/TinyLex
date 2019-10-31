@@ -41,6 +41,8 @@ private:
     Node *parse_expression(Parser &parser, Node *parent);
     Node *parse_sub_expression(Parser &parser, Node *parent);
     Node *parse_range(Parser &parser, Node *parent);
+    Node *parse_all_value(Parser &parser, Node *parent);
+    Node *parse_escape(Parser &parser, Node *parent);
     Node *parse_value(Parser &parser, Node *parent, char c);
     Node *parse_unary_op(Parser &parser, Node *node);
     Node *parse_operation(Node *left, Node *right, Node *parent, OperationType op);

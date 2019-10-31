@@ -1,7 +1,0 @@
-/home/benjilks/pain/TinyLex/build/CMakeFiles/edit_cache.dir
-/home/benjilks/pain/TinyLex/build/CMakeFiles/install/strip.dir
-/home/benjilks/pain/TinyLex/build/CMakeFiles/install/local.dir
-/home/benjilks/pain/TinyLex/build/CMakeFiles/TinyLex.dir
-/home/benjilks/pain/TinyLex/build/CMakeFiles/rebuild_cache.dir
-/home/benjilks/pain/TinyLex/build/CMakeFiles/install.dir
-/home/benjilks/pain/TinyLex/build/CMakeFiles/list_install_components.dir

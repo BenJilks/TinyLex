@@ -4,8 +4,9 @@
     public:
         Lexer(std::istream &stream);
         Lexer(string file_path);
-        Token next();
+        ~Lexer();
 
+        const Token &next();
         inline bool is_eof() const { return eof_flag; }
 
     private:
@@ -21,5 +22,6 @@
         std::ifstream file_in;
         char back_log;
         bool eof_flag;
+        Token token;
 
     };

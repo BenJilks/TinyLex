@@ -25,13 +25,13 @@ void CGenerator::gen_token_type()
     write_line("\n\tstruct Token\n\t{");
     write_line("\t\tenum TokenType\n\t\t{");
     for (auto exp : expressions)
-        write_line("\t\t\tTOKEN_" + exp.first + ",");
+        write_line("\t\t\t" + exp.first + ",");
     write_line("\t\t};");
 
     write_line("\n\t\tstatic const int count = " + std::to_string(expressions.size()) + ";");
-    write_line("\t\tstring data;");
-    write_line("\t\tTokenType type;");
+    write_line("\t\tchar *data;");
     write_line("\t\tconst char *type_name;");
+    write_line("\t\tTokenType type;");
     write_line("\t};");
 
 }

@@ -1,1 +1,0 @@
-/usr/bin/c++     CMakeFiles/TinyLex.dir/source/TinyLex.cpp.o CMakeFiles/TinyLex.dir/source/expression.cpp.o CMakeFiles/TinyLex.dir/source/generator/generator.cpp.o CMakeFiles/TinyLex.dir/source/generator/generator_c.cpp.o CMakeFiles/TinyLex.dir/source/lexer.cpp.o CMakeFiles/TinyLex.dir/source/parser.cpp.o  -o TinyLex 

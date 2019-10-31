@@ -1,9 +1,9 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#define DEBUG
+#define DEBUG 0
 
-#ifdef DEBUG
+#if DEBUG
 
 #include <stdio.h>
 #define LOG(...) printf(__VA_ARGS__)

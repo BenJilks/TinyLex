@@ -21,7 +21,7 @@ Node *ExpressionTable::parse_sub_expression(Parser &parser, Node *parent)
 
     // An expression surrounded by parentheses 
     node = parse_expression(parser, parent);
-    parser.next_char(); // )
+    parser.match(')');
 
     return node;
 }
@@ -37,15 +37,27 @@ Node *ExpressionTable::parse_range(Parser &parser, Node *parent)
     char from, to;
     while ((from = parser.next_char()) != ']' && !parser.is_eof())
     {
-        parser.skip_white_space();
-        parser.next_char(); // '-'
-        parser.skip_white_space();
-        to = parser.next_char();
+        to = from;
+        if (parser.get_look() == '-')
+        {
+            parser.match('-');
+            to = parser.next_char();
+        }
+
         node->values.push_back(std::make_pair(from, to));
-        
-        parser.skip_white_space();
     }
 
+    return node;
+}
+
+Node *ExpressionTable::parse_all_value(Parser &parser, Node *parent)
+{
+    Node *node = new Node;
+    node->parent = parent;
+    node->left = NULL;
+    node->right = NULL;
+    node->operation = OperationType::NONE;
+    node->values.push_back(std::make_pair(0, 127));
     return node;
 }
 
@@ -89,6 +101,15 @@ Node *ExpressionTable::parse_unary_op(Parser &parser, Node *node)
     return node;
 }
 
+Node *ExpressionTable::parse_escape(Parser &parser, Node *parent)
+{
+    char c = parser.next_char();
+    if (c == 'n')
+        return parse_value(parser, parent, '\n');
+    
+    return parse_value(parser, parent, c);
+}
+
 Node *ExpressionTable::parse_term(Parser &parser, Node *parent)
 {
     // Get the next value that's not white space
@@ -101,13 +122,15 @@ Node *ExpressionTable::parse_term(Parser &parser, Node *parent)
     {
         case '(': node = parse_sub_expression(parser, parent); break;
         case '[': node = parse_range(parser, parent); break;
+        case '\\': node = parse_escape(parser, parent); break;
+        case '.': node = parse_all_value(parser, parent); break;
         default: node = parse_value(parser, parent, c); break;
     }
 
     return parse_unary_op(parser, node);
 }
 
-#define IS_CHAR_VALUE(c) (!isspace(c))
+#define IS_CHAR_VALUE(c) (c != '\n' && c != ')' && c != EOF)
 #define IS_CHAR_FACTOR(c) ((c) == '|')
 
 Node *ExpressionTable::parse_operation(Node *left, Node *right, Node *parent, OperationType op)
