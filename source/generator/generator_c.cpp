@@ -77,7 +77,7 @@ void CGenerator::generate()
 
     write_line("\nnamespace TinyScript\n{");
     gen_token_type();
-    write_file("cpp/header.txt");
+    write_file("cpp_header.txt");
 
     write_line("\n#ifdef TINYLEX_IMPLEMENT");
     for (auto exp : expressions)
@@ -87,7 +87,7 @@ void CGenerator::generate()
         gen_expression(name, table);
     }
     gen_type_table();
-    write_file("cpp/implement.txt");
+    write_file("cpp_implement.txt");
     write_line("\n#endif");
 
     write_line("\n}");

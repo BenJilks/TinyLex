@@ -1,5 +1,6 @@
 #include "generator/generator.hpp"
 #include <iostream>
+#include <unistd.h>
 
 Generator::Generator() :
     out(std::cout) {}
@@ -25,10 +26,34 @@ void Generator::write_line(string line)
     out << line << std::endl;
 }
 
+static bool file_exists(string name)
+{
+    return access(name.c_str(), F_OK) != -1;
+}
+
+static const char *search_paths[] =
+{
+    "/include/",
+    "/usr/include/",
+    "/usr/local/include/",
+};
+
 void Generator::write_file(string file_path)
 {
+    // Find template file path
+    string file = "tinylex/" + file_path;
+    string path = "";
+    for (int i = 0; i < sizeof(search_paths) / sizeof(char *); i++)
+    {
+        if (access((string(search_paths[i]) + file).c_str(), F_OK) != -1)
+        {
+            path = search_paths[i];
+            break;
+        }
+    }
+
     // Open file and find its length
-    std::ifstream in("../tinylex/" + file_path);
+    std::ifstream in(path + file);
     in.seekg(0L, std::ifstream::end);
     int len = in.tellg();
     in.seekg(0L, std::ifstream::beg);
