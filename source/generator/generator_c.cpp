@@ -28,12 +28,12 @@ void CGenerator::gen_token_type()
         write_line("\t\t\t" + exp.first + ",");
     write_line("\t\t};");
 
-    write_line("\n\t\tstatic const int count = " + std::to_string(expressions.size()) + ";");
-    write_line("\t\tchar *data;");
+    write_line("\t\tstatic const int count = " + std::to_string(expressions.size()) + ";");
+    write_line("\t\tstring data;");
     write_line("\t\tconst char *type_name;");
+    write_line("\t\tint line, column;");
     write_line("\t\tTokenType type;");
     write_line("\t};");
-
 }
 
 void CGenerator::gen_for_each_type(string name, 
@@ -72,8 +72,10 @@ void CGenerator::generate(string project_name)
     write_line("#include <string>");
     write_line("#include <iostream>");
     write_line("#include <fstream>");
+    write_line("#include <vector>");
     write_line("#include <memory.h>");
     write_line("using std::string;");
+    write_line("using std::vector;");
 
     write_line("\nnamespace " + project_name + "\n{");
     gen_token_type();

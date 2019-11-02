@@ -1,12 +1,36 @@
 
-    class Lexer
+    class TinyError
+    {
+    public:
+        TinyError() :
+            error_flag(false) {}
+
+        bool has_errors() const;
+        virtual void report_errors(std::ostream &out = std::cout);
+    
+    protected:
+        void add_dependency(TinyError *dep) { deps.push_back(dep); }
+        bool error_flag;
+
+    private:
+        vector<TinyError*> deps;
+
+    };
+
+    class Lexer : public TinyError
     {
     public:
         Lexer(std::istream &stream);
         Lexer(string file_path);
         ~Lexer();
 
-        const Token &next();
+        void error(string msg);
+        void error(string msg, Token token);
+        void report_errors(std::ostream &out = std::cout);
+
+        void next();
+        void match(Token::TokenType type, string name);
+        const Token &get_look() const { return look; }
         inline bool is_eof() const { return eof_flag; }
 
     private:
@@ -18,10 +42,26 @@
         };
         MatchStatus next_match(Token &token);
 
+        enum class ErrorType
+        {
+            ParseError,
+            IOError,
+            Warning,
+        };
+
+        struct Error
+        {
+            ErrorType type;
+            string message;
+            int line, column;
+        };
+
+        vector<Error> errors;
         std::istream &in;
         std::ifstream file_in;
+        int line, column;
         char back_log;
         bool eof_flag;
-        Token token;
+        Token look;
 
     };

@@ -10,12 +10,13 @@ void Lexer::parse_statement(Parser &parser, Generator &generator)
     if (!parser.is_eof())
     {
         string name = parser.next_word();
+        parser.skip_white_space();
+        
         if (name == "project")
         {
             if (project_name != "")
                 parser.error("Project name already defined as '" + project_name + "'");
 
-            parser.skip_white_space();
             project_name = parser.next_word();
         }
         else

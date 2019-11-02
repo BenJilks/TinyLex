@@ -1,15 +1,45 @@
 
+    bool TinyError::has_errors() const
+    {
+        if (error_flag) 
+            return true;
+
+        for (TinyError *dep : deps)
+            if (dep->has_errors())
+                return true;
+
+        return false;
+    }
+
+    void TinyError::report_errors(std::ostream &out)
+    {
+        for (TinyError *dep : deps)
+            dep->report_errors(out);
+    }
+
     Lexer::Lexer(std::istream &stream) :
-        in(stream), back_log('\0'), eof_flag(false) 
+        in(stream), back_log('\0'), eof_flag(false), 
+        line(0), column(0)
 	{
-		token.data = new char[80];
+        look.data.resize(80);
+        next();
 	}
 
     Lexer::Lexer(string file_path) :
-        in(file_in), back_log('\0'), eof_flag(false)
+        in(file_in), back_log('\0'), eof_flag(false),
+        line(0), column(0)
     {
         file_in = std::ifstream(file_path);
-		token.data = new char[80];
+        if (!file_in.good())
+        {
+            error("Could not open input file '" + file_path + "'");
+            eof_flag = true;
+            look.data = nullptr;
+            return;
+        }
+
+        look.data.resize(80);
+        next();
     }
 
     Lexer::MatchStatus Lexer::next_match(Token &token)
@@ -18,15 +48,28 @@
         int types_left = STATE_COUNT;
         memset(states, 0, STATE_COUNT * sizeof(int));
         memset(last_states, 0, STATE_COUNT * sizeof(int));
+        token.line = line;
+        token.column = column;
 
 		bool first_char = true;
         while (types_left > 0 && !eof_flag)
         {
 			char c;
 			if (back_log != '\0' && first_char)
+            {
 				c = back_log;
+            }
 			else
+            {
+                column += 1;
 				c = in.get();
+
+                if (c == '\n')
+                {
+                    line += 1;
+                    column = 0;
+                }
+            }
 
             if (c == EOF)
             {
@@ -74,18 +117,57 @@
         return Lexer::MatchStatus::BLANK;
     }
 
-    const Token &Lexer::next()
+    void Lexer::next()
     {
         Lexer::MatchStatus status;
         do
         {
-            status = next_match(token);
+            status = next_match(look);
         } while (status != Lexer::MatchStatus::MATCH && !eof_flag);
+    }
 
-        return token;
+    void Lexer::match(Token::TokenType type, string name)
+    {
+        if (look.type != type)
+        {
+            error("Expected '" + name + "', got '" + 
+                string(look.data) + "' instead", look);
+        }
+
+        next();
+    }
+
+    void Lexer::error(string msg)
+    {
+        Error error;
+        error.type = ErrorType::IOError;
+        error.message = msg;
+        errors.push_back(error);
+
+        error_flag = true;
+    }
+
+    void Lexer::error(string msg, Token token)
+    {
+        Error error;
+        error.type = ErrorType::ParseError;
+        error.message = msg;
+        error.line = token.line;
+        error.column = token.column;
+        errors.push_back(error);
+
+        error_flag = true;
+    }
+
+    void Lexer::report_errors(std::ostream &out)
+    {
+        for (Error &error : errors)
+        {
+            out << "Error: " << error.message << std::endl;
+        }
     }
 
     Lexer::~Lexer()
     {
-        delete token.data;
+        file_in.close();
     }

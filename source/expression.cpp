@@ -113,7 +113,6 @@ Node *ExpressionTable::parse_escape(Parser &parser, Node *parent)
 Node *ExpressionTable::parse_term(Parser &parser, Node *parent)
 {
     // Get the next value that's not white space
-    parser.skip_white_space();
     char c = parser.next_char();
     
     // Parse that value
