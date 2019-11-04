@@ -55,7 +55,7 @@ int main(int argc, char **argv)
         std::cout << "Try 'tinylex --help' for more information" << std::endl;
         return -1;
     }
-
+ 
     CGenerator generator(out_file);
     Lexer lexer(generator);
     for (string in : input_files)

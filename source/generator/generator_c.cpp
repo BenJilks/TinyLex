@@ -28,9 +28,10 @@ void CGenerator::gen_token_type()
         write_line("\t\t\t" + exp.first + ",");
     write_line("\t\t};");
 
-    write_line("\t\tstatic const int count = " + std::to_string(expressions.size()) + ";");
-    write_line("\t\tstring data;");
-    write_line("\t\tconst char *type_name;");
+    write_line("\n\t\tstatic const int count = " + std::to_string(expressions.size()) + ";");
+    write_line("\t\tint data, length;");
+
+    write_line("\n\t\tconst char *type_name;");
     write_line("\t\tint line, column;");
     write_line("\t\tTokenType type;");
     write_line("\t};");

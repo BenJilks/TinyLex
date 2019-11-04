@@ -24,12 +24,15 @@
         Lexer(string file_path);
         ~Lexer();
 
+        char read_char(int index);
+        char *read_string(int index, int len);
+
         void error(string msg);
         void error(string msg, Token token);
         void report_errors(std::ostream &out = std::cout);
 
-        void next();
-        void match(Token::TokenType type, string name);
+        Token next();
+        Token match(Token::TokenType type, string name);
         const Token &get_look() const { return look; }
         inline bool is_eof() const { return eof_flag; }
 
@@ -41,6 +44,7 @@
             ERROR
         };
         MatchStatus next_match(Token &token);
+        void init();
 
         enum class ErrorType
         {
@@ -53,14 +57,15 @@
         {
             ErrorType type;
             string message;
-            int line, column;
+            int index;
         };
 
-        vector<Error> errors;
         std::istream &in;
         std::ifstream file_in;
-        int line, column;
-        char back_log;
+        char *cache;
+        int index;
+
+        vector<Error> errors;
         bool eof_flag;
         Token look;
 
