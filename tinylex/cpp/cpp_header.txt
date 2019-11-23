@@ -1,23 +1,5 @@
 
-    class TinyError
-    {
-    public:
-        TinyError() :
-            error_flag(false) {}
-
-        bool has_errors() const;
-        virtual void report_errors(std::ostream &out = std::cout);
-    
-    protected:
-        void add_dependency(TinyError *dep) { deps.push_back(dep); }
-        bool error_flag;
-
-    private:
-        vector<TinyError*> deps;
-
-    };
-
-    class Lexer : public TinyError
+    class Lexer : public TinyLib::LexerInterface<Token, Token::TokenType>
     {
     public:
         Lexer(std::istream &stream);
@@ -25,16 +7,18 @@
         ~Lexer();
 
         char read_char(int index);
-        char *read_string(int index, int len);
+        char *read_buffer(int index, int len);
+        string read_string(int index, int len);
+        string read_data(Token tk) { return read_string(tk.data, tk.length); }
 
         void error(string msg);
         void error(string msg, Token token);
         void report_errors(std::ostream &out = std::cout);
 
-        Token next();
-        Token match(Token::TokenType type, string name);
-        const Token &get_look() const { return look; }
-        inline bool is_eof() const { return eof_flag; }
+        virtual Token next();
+        virtual Token match(Token::TokenType type, string name);
+        virtual const Token &get_look() const { return look; }
+        virtual bool is_eof() const { return eof_flag; }
 
     private:
         enum class MatchStatus

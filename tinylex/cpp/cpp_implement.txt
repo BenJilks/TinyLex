@@ -1,25 +1,4 @@
 
-    bool TinyError::has_errors() const
-    {
-        // If this has an error, then return that there is one
-        if (error_flag) 
-            return true;
-
-        // Search its dependencies for errors
-        for (TinyError *dep : deps)
-            if (dep->has_errors())
-                return true;
-
-        // Otherwise there is no errors to report
-        return false;
-    }
-
-    void TinyError::report_errors(std::ostream &out)
-    {
-        for (TinyError *dep : deps)
-            dep->report_errors(out);
-    }
-
     Lexer::Lexer(std::istream &stream) :
         in(stream), eof_flag(false), index(0)
 	{
@@ -55,14 +34,18 @@
         return in.get();
     }
 
-    char *Lexer::read_string(int index, int len)
+    char *Lexer::read_buffer(int index, int len)
     {
         in.clear();
         in.seekg(index);
-
-        in.get(cache, len);
-        cache[len] = '\0';
+        in.get(cache, len + 1);
         return cache;
+    }
+
+    string Lexer::read_string(int index, int len)
+    {
+        char *buffer = read_buffer(index, len);
+        return string(buffer, len);
     }
 
     Lexer::MatchStatus Lexer::next_match(Token &token)
@@ -80,8 +63,7 @@
         while (types_left > 0 && !eof_flag)
         {
             // Read the next char
-			char c = read_char(index++);
-            token.length += 1;
+            char c = read_char(index++);
 
             // Check to see if it marks the end of the file stream
             if (c == EOF)
@@ -107,7 +89,10 @@
 
             // If there's tokens left, copy update the last state data
             if (types_left > 0)
+            {
                 memcpy(last_states, states, STATE_COUNT * sizeof(int));
+                token.length += 1;
+            }
         }
 
         // Find a valid token within the last valid state

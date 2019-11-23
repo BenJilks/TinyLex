@@ -1,4 +1,4 @@
-#include "generator/generator_c.hpp"
+#include "generator/generator_cpp.hpp"
 
 void CGenerator::gen_expression(string name, ExpressionTable *exp)
 {
@@ -69,7 +69,11 @@ void CGenerator::gen_type_table()
 
 void CGenerator::generate(string project_name)
 {
-    write_line("#pragma once");
+    write_file("cpp_tinylib.hpp");
+
+    write_line("#ifndef TINY_LEX_HPP");
+    write_line("#define TINY_LEX_HPP\n");
+
     write_line("#include <string>");
     write_line("#include <iostream>");
     write_line("#include <fstream>");
@@ -81,8 +85,13 @@ void CGenerator::generate(string project_name)
     write_line("\nnamespace " + project_name + "\n{");
     gen_token_type();
     write_file("cpp_header.txt");
+    write_line("\n}");
 
+    write_line("#endif\n");
     write_line("\n#ifdef TINYLEX_IMPLEMENT");
+    write_line("#ifndef TINYLEX_HAS_IMPLEMENT");
+    write_line("#define TINYLEX_HAS_IMPLEMENT\n");
+    write_line("\nnamespace " + project_name + "\n{");
     for (auto exp : expressions)
     {
         string name = exp.first;
@@ -91,7 +100,8 @@ void CGenerator::generate(string project_name)
     }
     gen_type_table();
     write_file("cpp_implement.txt");
-    write_line("\n#endif");
-
     write_line("\n}");
+
+    write_line("\n#endif");
+    write_line("#endif");
 }

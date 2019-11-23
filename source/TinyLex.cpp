@@ -1,7 +1,7 @@
 #include <iostream>
 #include <getopt.h>
 #include "lexer.hpp"
-#include "generator/generator_c.hpp"
+#include "generator/generator_cpp.hpp"
 
 static struct option cmd_options[] = 
 {
@@ -20,7 +20,7 @@ void show_use()
 int main(int argc, char **argv)
 {
     vector<string> input_files;
-    string out_file = "tinylex.h";
+    string out_file = "tinylex.hpp";
 
     // Read arguments
     for (;;)
