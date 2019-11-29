@@ -24,7 +24,7 @@ Copy            copy
 OpenBlock       {
 CloseBlock      }
 OpenArg         \(
-CloseArg        )
+CloseArg        \)
 OpenIndex       \[
 CloseIndex      \]
 Next            ,

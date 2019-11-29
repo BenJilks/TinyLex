@@ -1,11 +1,12 @@
-#pragma once
-#include "expression.hpp"
-#include <fstream>
-#include <vector>
-#include <tuple>
-using std::vector;
-using std::pair;
+#ifndef GENORATOR_H
+#define GENORATOR_H
 
+#include "lexer.h"
+
+void write_file(FILE *output, const char *file_path);
+void generate_cpp(FILE *output, Lexer *lex);
+
+/*
 class Generator
 {
 public:
@@ -27,3 +28,5 @@ private:
     std::ostream &out;
 
 };
+*/
+#endif // GENORATOR_H
