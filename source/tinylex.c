@@ -1,27 +1,33 @@
 #include <getopt.h>
+#include <string.h>
 #include "lexer.h"
 #include "generator.h"
 
 static struct option cmd_options[] = 
 {
-    {"out",     required_argument,  0,  'o'},
-    {"help",    no_argument,        0,  'h'},
+    {"out",         required_argument,  0,  'o'},
+    {"language",    required_argument,  0,  'l'},
+    {"help",        no_argument,        0,  'h'},
 };
 
 void show_use()
 {
     printf("Usage: tinylex [options] file...\n");
     printf("Options: \n");
-    printf("\t-h/--help\t\tShow command help information\n");
-    printf("\t-o/--out <file>\t\tOutput code into <file>\n");
+    printf("\t-h/--help\t\t\tShow command help information\n");
+    printf("\t-l/--language <c,cpp>\t\tSet the output language\n");
+    printf("\t-o/--out <file>\t\t\tOutput code into <file>\n");
 }
 
 int main(int argc, char **argv)
 {
     char **input_files;
-    FILE *output_file;
     int input_file_count;
+
+    FILE *output_file;
     int use_output_file;
+
+    char *lang = "c";
 
     // Read arguments
     input_file_count = 0;
@@ -30,7 +36,7 @@ int main(int argc, char **argv)
     for (;;)
     {
         int option_index = 0;
-        int c = getopt_long(argc, argv, "o:h", 
+        int c = getopt_long(argc, argv, "o:l:h", 
             cmd_options, &option_index);
         if (c == -1)
             break;
@@ -41,6 +47,10 @@ int main(int argc, char **argv)
             case 'o':
                 output_file = fopen(optarg, "wb");
                 use_output_file = 1;
+                break;
+            
+            case 'l':
+                lang = optarg;
                 break;
             
             // Display usage
@@ -71,7 +81,11 @@ int main(int argc, char **argv)
         lexer_parse(&stream, &lex);
         parser_close_stream(&stream);
     }
-    generate_cpp(output_file, &lex);
+
+    if (!strcmp(lang, "cpp"))
+        generate_cpp(output_file, &lex);
+    else
+        generate_c(output_file, &lex);
 
     if (use_output_file)
         fclose(output_file);

@@ -1,0 +1,121 @@
+
+#define INIT_NAME           LEXER_NAME##_init
+#define NEXT_MATCH_NAME     LEXER_NAME##_next_match
+#define NEXT_NAME           LEXER_NAME##_next
+#define MATCH_NAME          LEXER_NAME##_match
+
+typedef enum _MatchStatus
+{
+    MATCH,
+    BLANK
+} MatchStatus;
+
+void INIT_NAME(
+    LexerStream *lex)
+{
+    NEXT_NAME(lex);
+}
+
+static MatchStatus NEXT_MATCH_NAME(
+    LexerStream *lex)
+{
+    Token *token = &lex->look;
+    int types_left = STATE_COUNT;
+    token->data = lex->index;
+    token->len = 0;
+
+    // Reset state info
+    memset(states, 0, STATE_COUNT * sizeof(int));
+    memset(last_states, 0, STATE_COUNT * sizeof(int));
+
+    // Read each char and check if it's a valid token, if not then stop checking
+    // Repeat until all tokens are no longer valid
+    while (types_left > 0 && !lex->eof_flag)
+    {
+        // Read the next char
+        char c = lexer_read_char(lex, lex->index++);
+
+        // Check to see if it marks the end of the file stream
+        if (c == EOF)
+        {
+            lex->eof_flag = 1;
+            break;
+        }
+
+        // Go through each token
+        for (int i = 0; i < STATE_COUNT; i++)
+        {
+            // Only check still valid tokens
+            if (states[i] != -1)
+            {
+                // Find the next state
+                states[i] = type_table[i][states[i] * 128 + c];
+
+                // If the state is not valid, mark this
+                if (states[i] == -1)
+                    types_left--;
+            }
+        }
+
+        // If there's tokens left, copy update the last state data
+        if (types_left > 0)
+        {
+            memcpy(last_states, states, STATE_COUNT * sizeof(int));
+            token->len += 1;
+        }
+    }
+
+    // Find a valid token within the last valid state
+    for (int i = 0; i < STATE_COUNT; i++)
+    {
+        if (last_states[i] != -1)
+        {
+            // Check to see if the state is within on of the end states
+            for (int j = 0; j < type_end_state_count[i]; j++)
+            {
+                if (type_end_states[i][j] == last_states[i])
+                {
+                    // This is a valid token
+                    lex->index -= 1;
+                    token->type = i;
+                    token->type_name = type_names[i];
+                    return MATCH;
+                }
+            }
+        }
+    }
+
+    // If no types match
+    return BLANK;
+}
+
+Token NEXT_NAME(
+    LexerStream *lex)
+{
+    Token last = lex->look;
+
+    // Find the next valid token
+    MatchStatus status;
+    do
+    {
+        status = NEXT_MATCH_NAME(lex);
+    } while (status != MATCH && !lex->eof_flag);
+
+    return last;
+}
+
+Token MATCH_NAME(
+    LexerStream *lex, 
+    char type, 
+    const char *name)
+{
+    // Check token type info
+    if (lex->look.type != type)
+    {
+        //error("Expected '" + name + "', got '" + 
+        //    string("lolz") + "' instead", look);
+    }
+
+    // Get the next token
+    return NEXT_NAME(lex);
+}

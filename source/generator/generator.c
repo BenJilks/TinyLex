@@ -1,10 +1,43 @@
 #include "generator.h"
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+char *to_upper(
+    char *str)
+{
+    int len, i;
+    char *out;
+
+    len = strlen(str);
+    out = malloc(len + 1);
+    out[len] = '\0';
+
+    for (i = 0; i < len; i++)
+        out[i] = toupper(str[i]);
+    return out;
+}
+
+char *to_lower(
+    char *str)
+{
+    int len, i;
+    char *out;
+
+    len = strlen(str);
+    out = malloc(len + 1);
+    out[len] = '\0';
+
+    for (i = 0; i < len; i++)
+        out[i] = tolower(str[i]);
+    return out;
+}
 
 static const char *search_paths[] =
 {
     "",
+    "../",
     "/include/",
     "/usr/include/",
     "/usr/local/include/",
@@ -35,7 +68,7 @@ void write_file(
 
     if (!found)
     {
-        printf("Error: Could not find template file '%s'", 
+        printf("Error: Could not find template file '%s'\n", 
             file_path);
         return;
     }
