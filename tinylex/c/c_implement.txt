@@ -1,9 +1,4 @@
 
-#define INIT_NAME           LEXER_NAME##_init
-#define NEXT_MATCH_NAME     LEXER_NAME##_next_match
-#define NEXT_NAME           LEXER_NAME##_next
-#define MATCH_NAME          LEXER_NAME##_match
-
 typedef enum _MatchStatus
 {
     MATCH,
@@ -13,7 +8,8 @@ typedef enum _MatchStatus
 void INIT_NAME(
     LexerStream *lex)
 {
-    NEXT_NAME(lex);
+    if (!lex->eof_flag)
+        NEXT_NAME(lex);
 }
 
 static MatchStatus NEXT_MATCH_NAME(
@@ -21,7 +17,10 @@ static MatchStatus NEXT_MATCH_NAME(
 {
     Token *token = &lex->look;
     int types_left = STATE_COUNT;
-    token->data = lex->index;
+    token->data_index = lex->index;
+    token->line_index = lex->line_index;
+    token->line_no = lex->line;
+    token->column_no = lex->column;
     token->len = 0;
 
     // Reset state info
@@ -60,6 +59,14 @@ static MatchStatus NEXT_MATCH_NAME(
         // If there's tokens left, copy update the last state data
         if (types_left > 0)
         {
+            lex->column += 1;
+            if (c == '\n')
+            {
+                lex->line_index = lex->index;
+                lex->line += 1;
+                lex->column = 0;
+            }
+
             memcpy(last_states, states, STATE_COUNT * sizeof(int));
             token->len += 1;
         }
@@ -109,11 +116,23 @@ Token MATCH_NAME(
     char type, 
     const char *name)
 {
+    char token_data[80];
+    char msg[128];
+    Token look;
+
     // Check token type info
-    if (lex->look.type != type)
+    look = lex->look;
+    if (look.type != type)
     {
-        //error("Expected '" + name + "', got '" + 
-        //    string("lolz") + "' instead", look);
+        memcpy(token_data, lexer_read_buffer(
+            lex, look.data_index, look.len), 
+            look.len);
+        token_data[look.len] = '\0';
+
+        sprintf(msg, "Expected '%s', got '%s' instead", 
+            name, token_data);
+
+        lexer_error(lex, lex->look, msg);
     }
 
     // Get the next token

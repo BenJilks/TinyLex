@@ -81,6 +81,7 @@ static Node *parse_range(
         node->values[node->value_count] = (NodeValue) { from, to };
         node->value_count += 1;
     }
+    parser_match(stream, ']');
 
     return node;
 }
@@ -264,7 +265,7 @@ static EndingStates compile_value(
 
             from = from_states.states[j];
             start = from * 128 + value.from;
-            len = value.to -  value.from;
+            len = value.to - value.from + 1;
             memset(table->table + start, to, len);
         }
     }
@@ -371,6 +372,7 @@ static void compile_expression_tree(
     Node *root)
 {
     table->table = (char*)malloc(128);
+    table->state_count += 1;
     memset(table->table, -1, 128);
 
     table->ending_states = compile_node(table, 
