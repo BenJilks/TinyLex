@@ -1,20 +1,26 @@
 cmake_minimum_required(VERSION 3.15)
+project(template)
 project(tinylex)
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR})
 file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/source/*.c"
     "${PROJECT_SOURCE_DIR}/source/generator/*.c"
 )
 
-set(CMAKE_BUILD_TYPE Debug)
+add_executable(template "templates/template.c")
+add_custom_command(TARGET template
+    POST_BUILD
+    COMMAND ./template ${PROJECT_SOURCE_DIR}/templates
+    COMMENT "Generating templates"
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+)
+
+#set(CMAKE_BUILD_TYPE Debug)
 add_executable(tinylex ${all_SRCS})
-set_target_properties(tinylex PROPERTIES PUBLIC_HEADER 
-    "tinylex/cpp/cpp_header.txt;tinylex/cpp/cpp_tinylib.hpp;tinylex/cpp/cpp_implement.txt")
+add_dependencies(tinylex template)
 
 install(TARGETS tinylex 
     RUNTIME 
         DESTINATION bin
-    PUBLIC_HEADER 
-        DESTINATION include/tinylex
 )

@@ -1,5 +1,8 @@
 #include "generator.h"
 #include "generator_ctype.c"
+#include "cpp_header.hpp"
+#include "cpp_implement.hpp"
+#include "cpp_tinylib.hpp"
 
 static void gen_token_type(
     FILE *output,
@@ -29,7 +32,7 @@ void generate_cpp(
 {
     int i;
 
-    write_file(output, "cpp_tinylib.hpp");
+    fputs(template_cpp_tinylib, output);
     fprintf(output, "#ifndef TINY_LEX_HPP\n");
     fprintf(output, "#define TINY_LEX_HPP\n\n");
 
@@ -43,7 +46,7 @@ void generate_cpp(
 
     fprintf(output, "\nnamespace %s\n{\n", lex->project_name);
     gen_token_type(output, lex);
-    write_file(output, "cpp_header.txt");
+    fputs(template_cpp_header, output);
     fprintf(output, "\n}\n");
 
     fprintf(output, "#endif\n");
@@ -55,7 +58,7 @@ void generate_cpp(
         gen_expression(output, &lex->tables[i]);
 
     gen_type_table(output, lex);
-    write_file(output, "cpp_implement.txt");
+    fputs(template_cpp_implement, output);
     fprintf(output, "\n}\n");
 
     fprintf(output, "\n#endif\n");

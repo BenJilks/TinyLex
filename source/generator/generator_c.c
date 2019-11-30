@@ -1,5 +1,7 @@
 #include "generator.h"
 #include "generator_ctype.c"
+#include "c_header.h"
+#include "c_implement.h"
 #include <stdlib.h>
 
 static void generate_implement(
@@ -20,7 +22,7 @@ static void generate_implement(
     for (i = 0; i < lex->table_count; i++)
         gen_expression(output, &lex->tables[i]);
     gen_type_table(output, lex);
-    write_file(output, "c/c_implement.txt");
+    fputs(template_c_implement, output);
 
     fprintf(output, "\n#endif\n");
 }
@@ -53,7 +55,7 @@ void generate_c(
     title_upper = to_upper(lex->project_name);
     title_lower = to_lower(lex->project_name);
 
-    write_file(output, "c/c_header.h");
+    fputs(template_c_header, output);
     fprintf(output, "\n#ifndef %s_H\n", title_upper);
     fprintf(output, "#define %s_H\n", title_upper);
     generate_type_definitions(output, lex);
