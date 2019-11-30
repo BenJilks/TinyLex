@@ -8,6 +8,20 @@
 #define WHITE   "\033[37m"
 #define RESET   "\033[0m"
 
+#define ERROR(stream, pattern, ...) \
+{ \
+    int i; \
+     \
+    printf(RED "Error(%i:%i): " pattern "\n", \
+        stream->line_no, stream->column_no, \
+        __VA_ARGS__); \
+     \
+    printf(WHITE "\t%s\t", stream->line_buffer); \
+    for (i = 0; i < stream->column_no - 1; i++) \
+        printf(" "); \
+    printf(ORANGE "~\n" RESET); \
+}
+
 // Loads the next line in a stream into it's line buffer
 static void load_next_line(
     Stream *stream)
@@ -56,7 +70,6 @@ void parser_next_word(
     while (!isspace(stream->look) && !stream->eof_flag)
     {
         buffer[buffer_pointer] = parser_next_char(stream);
-        //printf("%c\n", buffer[buffer_pointer]);
         buffer_pointer += 1;
     }
 
@@ -69,6 +82,15 @@ Stream parser_open_stream(
 {
     Stream stream;
     stream.file = fopen(file_path, "r");
+    if (!stream.file)
+    {
+        printf(RED "Error: Could not open file '%s'\n" RESET, 
+            file_path);
+
+        stream.eof_flag = 1;
+        return stream;
+    }
+
     stream.line_no = 0;
     stream.column_no = 0;
     stream.eof_flag = 0;
@@ -98,7 +120,8 @@ void parser_match(
 {
     if (stream->look != c)
     {
-        // We have a problem here
+        ERROR(stream, "Expected '%c', got '%c' instead",
+            c, stream->look);
     }
 
     load_next_char(stream);

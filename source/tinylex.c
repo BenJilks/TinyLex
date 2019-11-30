@@ -78,8 +78,11 @@ int main(int argc, char **argv)
     for (i = 0; i < input_file_count; i++)
     {
         Stream stream = parser_open_stream(input_files[i]);
-        lexer_parse(&stream, &lex);
-        parser_close_stream(&stream);
+        if (!stream.eof_flag)
+        {
+            lexer_parse(&stream, &lex);
+            parser_close_stream(&stream);
+        }
     }
 
     if (!strcmp(lang, "cpp"))
