@@ -61,6 +61,7 @@ static Node *parse_range(
     node->left = NULL;
     node->right = NULL;
     node->operation = OPERATION_NONE;
+    node->value_count = 0;
 
     // While the ending bracket has not been reached, read a new range
     parser_match(stream, '[');

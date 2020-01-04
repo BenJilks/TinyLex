@@ -32,11 +32,11 @@ LexerStream lexer_stream_open(const char *file_path);
 void lexer_stream_close(LexerStream *stream);
 char lexer_read_char(LexerStream *lex, int index);
 char *lexer_read_buffer(LexerStream *lex, int index, int len);
+void lexer_read_string(LexerStream *lex, Token token, char *out);
 void lexer_error(LexerStream *lex, Token token, const char *error);
 
 #endif // LEXER_H
 
-#define TINYLEX_IMPLEMENT
 #ifdef TINYLEX_IMPLEMENT
 
 #define CACHE_SIZE      1024
@@ -96,6 +96,19 @@ char *lexer_read_buffer(
     fseek(lex->file, index, SEEK_SET);
     fread(lex->cache, sizeof(char), len + 1, lex->file);
     return lex->cache;
+}
+
+void lexer_read_string(
+    LexerStream *lex, 
+    Token token, 
+    char *out)
+{
+    char *buffer;
+
+    buffer = lexer_read_buffer(lex, 
+        token.data_index, token.len);
+    memcpy(out, buffer, token.len);
+    out[token.len] = '\0';
 }
 
 char *lexer_read_line(

@@ -14,7 +14,7 @@ static void gen_token_type(
     fprintf(output, "\n\tstruct Token\n\t{\n");
     fprintf(output, "\t\tenum TokenType\n\t\t{\n");
     for (i = 0; i < lex->table_count; i++)
-        fprintf(output, "\t\t\t%s,\n", lex->tables[i]);
+        fprintf(output, "\t\t\t%s,\n", lex->tables[i].name);
     fprintf(output, "\t\t};");
 
     fprintf(output, "\n\t\tstatic const int count = %i;\n", lex->table_count);
