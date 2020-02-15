@@ -13,11 +13,11 @@ static void gen_token_type(
     // Token struct
     fprintf(output, "\n\tstruct Token\n\t{\n");
     fprintf(output, "\t\tenum TokenType\n\t\t{\n");
-    for (i = 0; i < lex->table_count; i++)
-        fprintf(output, "\t\t\t%s,\n", lex->tables[i].name);
+    for (i = 0; i < lex->rule_count; i++)
+        fprintf(output, "\t\t\t%s,\n", lex->rules[i].name);
     fprintf(output, "\t\t};");
 
-    fprintf(output, "\n\t\tstatic const int count = %i;\n", lex->table_count);
+    fprintf(output, "\n\t\tstatic const int count = %i;\n", lex->rule_count);
     fprintf(output, "\t\tint data, length;\n");
 
     fprintf(output, "\n\t\tconst char *type_name;\n");
@@ -54,9 +54,8 @@ void generate_cpp(
     fprintf(output, "#ifndef TINYLEX_HAS_IMPLEMENT\n");
     fprintf(output, "#define TINYLEX_HAS_IMPLEMENT\n\n");
     fprintf(output, "\nnamespace %s\n{\n", lex->project_name);
-    for (i = 0; i < lex->table_count; i++)
-        gen_expression(output, &lex->tables[i]);
 
+    gen_table(output, lex);
     gen_type_table(output, lex);
     fputs(template_cpp_implement, output);
     fprintf(output, "\n}\n");

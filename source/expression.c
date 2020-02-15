@@ -239,11 +239,23 @@ static void free_node(
     free(node);
 }
 
-static EndingStates compile_node(ExpressionTable *table, 
+static EndingStates compile_node(Rule *table, 
     Node *node, EndingStates from);
 
+static void copy_state(
+    Rule *rule,
+    int start,
+    int to,
+    int len)
+{
+    int i;
+
+    for (i = 0; i < len; i++)
+        rule->table[start + i] = to;
+}
+
 static EndingStates compile_value(
-    ExpressionTable *table,
+    Rule *rule,
     Node *node, 
     EndingStates from_states)
 {
@@ -251,10 +263,10 @@ static EndingStates compile_value(
     int i, j, to;
 
     // Create the new state
-    to = table->state_count;
-    table->state_count += 1;
-    table->table = (char*)realloc(table->table, table->state_count * 128);
-    memset(table->table + (table->state_count - 1) * 128, -1, 128);
+    to = rule->state_count;
+    rule->state_count += 1;
+    rule->table = realloc(rule->table, rule->state_count * sizeof(STATE_SIZE) * CHAR_COUNT);
+    memset(rule->table + (rule->state_count - 1) * CHAR_COUNT, -1, sizeof(STATE_SIZE) * CHAR_COUNT);
 
     // Create transitions to the new state
     for (i = 0; i < node->value_count; i++)
@@ -265,9 +277,10 @@ static EndingStates compile_value(
             int start, len, from;
 
             from = from_states.states[j];
-            start = from * 128 + value.from;
+            start = from * CHAR_COUNT + value.from;
             len = value.to - value.from + 1;
-            memset(table->table + start, to, len);
+            copy_state(rule, start, to, len);
+//            memset(rule->table + start, to, sizeof(STATE_SIZE) * len);
         }
     }
 
@@ -275,14 +288,14 @@ static EndingStates compile_value(
 }
 
 static EndingStates compile_concat(
-    ExpressionTable *table,
+    Rule *rule,
     Node *node, 
     EndingStates from)
 {
     EndingStates state_a, state_b;
 
-    state_a = compile_node(table, node->left, from);
-    state_b = compile_node(table, node->right, state_a);
+    state_a = compile_node(rule, node->left, from);
+    state_b = compile_node(rule, node->right, state_a);
     return state_b;
 }
 
@@ -297,104 +310,105 @@ static EndingStates combine_states(EndingStates a, EndingStates b)
 }
 
 static EndingStates compile_or(
-    ExpressionTable *table,
+    Rule *rule,
     Node *node, 
     EndingStates from)
 {
     EndingStates state_a, state_b;
 
-    state_a = compile_node(table, node->left, from);
-    state_b = compile_node(table, node->right, from);
+    state_a = compile_node(rule, node->left, from);
+    state_b = compile_node(rule, node->right, from);
     return combine_states(state_a, state_b);
 }
 
 static EndingStates compile_optional(
-    ExpressionTable *table,
+    Rule *rule,
     Node *node, 
     EndingStates from)
 {
     EndingStates option;
 
-    option = compile_node(table, node->left, from);
+    option = compile_node(rule, node->left, from);
     return combine_states(from, option);
 }
 
-static EndingStates compile_one_or_more(
-    ExpressionTable *table,
+static EndingStates compile_any(
+    Rule *rule,
     Node *node, 
     EndingStates from)
 {
     EndingStates ends;
     int i, j;
 
-    ends = compile_node(table, node->left, from);
-    for (i = 0; i < 128; i++)
+    ends = compile_node(rule, node->left, from);
+    for (i = 0; i < CHAR_COUNT; i++)
     {
-        char to = table->table[from.states[0] * 128 + i];
+        char to = rule->table[from.states[0] * CHAR_COUNT + i];
         if (to != -1)
         {
             for (j = 0; j < ends.count; j++)
-                table->table[ends.states[j] * 128 + i] = from.states[0];
+                rule->table[ends.states[j] * CHAR_COUNT + i] = from.states[0];
         }
     }
 
-    return ends;
+    return combine_states(from, ends);
 }
 
-static EndingStates compile_any(
-    ExpressionTable *table,
+static EndingStates compile_one_or_more(
+    Rule *rule,
     Node *node, 
     EndingStates from)
 {
     EndingStates ends;
 
-    ends = compile_one_or_more(table, node, from);
-    return combine_states(from, ends);
+    ends = compile_node(rule, node->left, from);
+    ends = compile_any(rule, node, ends);
+    return ends;
 }
 
 static EndingStates compile_node(
-    ExpressionTable *table,
+    Rule *rule,
     Node *node, 
     EndingStates from)
 {
     switch(node->operation)
     {
-        case OPERATION_CONCAT: return compile_concat(table, node, from);
-        case OPERATION_OR: return compile_or(table, node, from);
-        case OPERATION_OPTIONAL: return compile_optional(table, node, from);
-        case OPERATION_ONE_OR_MORE: return compile_one_or_more(table, node, from);
-        case OPERATION_ANY: return compile_any(table, node, from);
-        default: return compile_value(table, node, from);
+        case OPERATION_CONCAT: return compile_concat(rule, node, from);
+        case OPERATION_OR: return compile_or(rule, node, from);
+        case OPERATION_OPTIONAL: return compile_optional(rule, node, from);
+        case OPERATION_ONE_OR_MORE: return compile_one_or_more(rule, node, from);
+        case OPERATION_ANY: return compile_any(rule, node, from);
+        default: return compile_value(rule, node, from);
     }
 }
 
 static void compile_expression_tree(
-    ExpressionTable *table,
+    Rule *rule,
     Node *root)
 {
-    table->table = (char*)malloc(128);
-    table->state_count += 1;
-    memset(table->table, -1, 128);
+    rule->table = malloc(sizeof(STATE_SIZE) * CHAR_COUNT);
+    rule->state_count += 1;
+    memset(rule->table, -1, sizeof(STATE_SIZE) * CHAR_COUNT);
 
-    table->ending_states = compile_node(table, 
+    rule->ending_states = compile_node(rule, 
         root, (EndingStates) { 1, 0 });
 }
 
-ExpressionTable expression_parse(
+Rule expression_parse(
     Stream *stream)
 {
-    ExpressionTable expression;
-    expression.ending_states.count = 0;
-    expression.state_count = 0;
+    Rule rule;
+    rule.ending_states.count = 0;
+    rule.state_count = 0;
 
     Node *root = parse_expression_node(stream);
-    compile_expression_tree(&expression, root);
+    compile_expression_tree(&rule, root);
     free_node(root);
-    return expression;
+    return rule;
 }
 
 void expression_free(
-    ExpressionTable expression)
+    Rule rule)
 {
-    free(expression.table);
+    free(rule.table);
 }

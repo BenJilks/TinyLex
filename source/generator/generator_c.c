@@ -19,8 +19,7 @@ static void generate_implement(
     fprintf(output, "#define NEXT_NAME %s_next\n", title_lower);
     fprintf(output, "#define MATCH_NAME %s_match\n", title_lower);
 
-    for (i = 0; i < lex->table_count; i++)
-        gen_expression(output, &lex->tables[i]);
+    gen_table(output, lex);
     gen_type_table(output, lex);
     fputs(template_c_implement, output);
 
@@ -35,11 +34,11 @@ static void generate_type_definitions(
 
     fprintf(output, "\ntypedef enum _%sTokenType\n", lex->project_name);
     fprintf(output, "{\n");
-    for (i = 0; i < lex->table_count; i++)
+    for (i = 0; i < lex->rule_count; i++)
     {
         fprintf(output, "\t%s_%s%s,\n", 
             lex->project_name, 
-            lex->tables[i].name,
+            lex->rules[i].name,
             i == 0 ? " = 0" : "");
     }
     fprintf(output, "} %sTokenType;\n", lex->project_name);

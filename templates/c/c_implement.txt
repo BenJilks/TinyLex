@@ -12,85 +12,62 @@ void INIT_NAME(
         NEXT_NAME(lex);
 }
 
+#define CHAR_COUNT 128
+
 static MatchStatus NEXT_MATCH_NAME(
     LexerStream *lex)
 {
     Token *token = &lex->look;
-    int types_left = STATE_COUNT;
+    unsigned int state, next_state;
+    char next_char, type;
+
+    // Assign token info
     token->data_index = lex->index;
     token->line_index = lex->line_index;
     token->line_no = lex->line;
     token->column_no = lex->column;
     token->len = 0;
 
-    // Reset state info
-    memset(states, 0, STATE_COUNT * sizeof(int));
-    memset(last_states, 0, STATE_COUNT * sizeof(int));
-
-    // Read each char and check if it's a valid token, if not then stop checking
-    // Repeat until all tokens are no longer valid
-    while (types_left > 0 && !lex->eof_flag)
+    state = 0;
+    do
     {
-        // Read the next char
-        char c = lexer_read_char(lex, lex->index++);
+        next_char = lexer_read_char(lex, lex->index);
+        next_state = table[state * CHAR_COUNT + next_char];
+        printf("%u -%c-> %u\n", state, next_char, next_state);
 
-        // Check to see if it marks the end of the file stream
-        if (c == EOF)
+        lex->index += 1;
+        lex->column += 1;
+        if (next_char == '\n')
         {
-            lex->eof_flag = 1;
-            break;
+            lex->line_index = lex->index;
+            lex->line += 1;
+            lex->column = 0;
         }
 
-        // Go through each token
-        for (int i = 0; i < STATE_COUNT; i++)
+        if (next_state == NONE)
         {
-            // Only check still valid tokens
-            if (states[i] != -1)
-            {
-                // Find the next state
-                states[i] = type_table[i][states[i] * 128 + c];
+            // If the end state is not valid, 
+            // there's no match
+            type = end_states[state];
+//            printf("Ending: %i -> %i\n", state, type);
+            if (type == -1)
+                break;
 
-                // If the state is not valid, mark this
-                if (states[i] == -1)
-                    types_left--;
-            }
+            // Otherwise there is one, so return so
+            token->type_name = type_names[type];
+            token->type = type;
+            lex->index -= 1;
+            lex->column -= 1;
+            return MATCH;
         }
 
-        // If there's tokens left, copy update the last state data
-        if (types_left > 0)
-        {
-            lex->column += 1;
-            if (c == '\n')
-            {
-                lex->line_index = lex->index;
-                lex->line += 1;
-                lex->column = 0;
-            }
+        state = next_state;
+        token->len += 1;
+    } while(next_char != EOF);
 
-            memcpy(last_states, states, STATE_COUNT * sizeof(int));
-            token->len += 1;
-        }
-    }
-
-    // Find a valid token within the last valid state
-    for (int i = 0; i < STATE_COUNT; i++)
-    {
-        if (last_states[i] != -1)
-        {
-            // Check to see if the state is within on of the end states
-            for (int j = 0; j < type_end_state_count[i]; j++)
-            {
-                if (type_end_states[i][j] == last_states[i])
-                {
-                    // This is a valid token
-                    lex->index -= 1;
-                    token->type = i;
-                    token->type_name = type_names[i];
-                    return MATCH;
-                }
-            }
-        }
-    }
+    // If there's nothing left, mark so
+    if (lexer_read_char(lex, lex->index) == EOF)
+        lex->eof_flag = 1;
 
     // If no types match
     return BLANK;

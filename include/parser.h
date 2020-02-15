@@ -3,6 +3,10 @@
 
 #include <stdio.h>
 
+#define CHAR_COUNT  128
+#define STATE_SIZE  char
+#define NONE (1 << (sizeof(STATE_SIZE) * 8)) - 1
+
 typedef struct _Stream
 {
     FILE *file;

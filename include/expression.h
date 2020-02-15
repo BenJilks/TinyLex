@@ -6,19 +6,19 @@
 typedef struct _EndingStates
 {
     int count;
-    int states[80];
+    unsigned STATE_SIZE states[80];
 } EndingStates;
 
-typedef struct _ExpressionTable
+typedef struct _Rule
 {
     char name[80];
-    char *table;
+    unsigned STATE_SIZE *table;
 
     EndingStates ending_states;
     int state_count;
-} ExpressionTable;
+} Rule;
 
-ExpressionTable expression_parse(Stream *stream);
-void expression_free(ExpressionTable expression);
+Rule expression_parse(Stream *stream);
+void expression_free(Rule expression);
 
 #endif // EXPRESSION_H

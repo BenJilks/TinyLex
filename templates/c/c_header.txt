@@ -116,11 +116,17 @@ char *lexer_read_line(
     int index, 
     int *len)
 {
+    char c;
+
     *len = 0;
-    while (lexer_read_char(lex, index + 1 + *len) != '\n')
+    do
+    {
+        c = lexer_read_char(lex, index + *len);
         *len += 1;
+    } while (c != '\n' && c != EOF);
+    *len -= 1;
     
-    return lexer_read_buffer(lex, index + 1, *len);
+    return lexer_read_buffer(lex, index, *len);
 }
 
 void lexer_error(

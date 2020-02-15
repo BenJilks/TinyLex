@@ -85,6 +85,7 @@ int main(int argc, char **argv)
         }
     }
 
+    lexer_link(&lex);
     if (!strcmp(lang, "cpp"))
         generate_cpp(output_file, &lex);
     else
