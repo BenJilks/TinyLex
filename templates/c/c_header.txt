@@ -22,8 +22,9 @@ typedef struct _LexerStream
     FILE *file;
     int index, line_index;
     int line, column;
-    int eof_flag;
+    int eof_flag, len;
 
+    int cache_start, cache_end;
     char *cache;
     Token look;
 } LexerStream;
@@ -40,10 +41,75 @@ void lexer_error(LexerStream *lex, Token token, const char *error);
 #ifdef TINYLEX_IMPLEMENT
 
 #define CACHE_SIZE      1024
-#define RED     "\033[1;31m"
-#define ORANGE  "\033[01;33m"
-#define WHITE   "\033[37m"
-#define RESET   "\033[0m"
+#define RED             "\033[1;31m"
+#define ORANGE          "\033[01;33m"
+#define WHITE           "\033[37m"
+#define RESET           "\033[0m"
+
+#define MIN(a, b) (a) < (b) ? (a) : (b)
+#define MAX(a, b) (a) > (b) ? (a) : (b)
+
+static void populate_cache(
+    LexerStream *lex)
+{
+    int len;
+
+    len = lex->cache_end - lex->cache_start;
+    fseek(lex->file, lex->cache_start, SEEK_SET);
+    fread(lex->cache, sizeof(char), len, lex->file);
+
+//    printf("!!! Populated cache !!!\n");
+}
+
+char lexer_read_char(
+    LexerStream *lex, 
+    int index)
+{
+    if (index >= lex->len)
+        return EOF;
+
+    if (index < lex->cache_start 
+        || index > lex->cache_end)
+    {
+        lex->cache_start = MAX(index - CACHE_SIZE/2, 0);
+        lex->cache_end = MIN(lex->cache_start + CACHE_SIZE, lex->len);
+        populate_cache(lex);
+    }
+
+    return lex->cache[index - lex->cache_start];
+}
+
+char *lexer_read_buffer(
+    LexerStream *lex,
+    int index, 
+    int len)
+{
+    if (len > CACHE_SIZE)
+    {
+        printf("Error: Token too large to access\n");
+        return NULL;
+    }
+
+    // If the buffer is not within the cache, 
+    // reposition it so it is
+    if (index < lex->cache_start 
+        || index + len > lex->cache_end)
+    {
+        lex->cache_start = MAX(index - CACHE_SIZE/2 - len/2, 0);
+        lex->cache_end = MIN(lex->cache_start + CACHE_SIZE, lex->len);
+        populate_cache(lex);
+    }
+
+    return lex->cache + index - lex->cache_start;
+}
+
+static void read_len(
+    LexerStream *lex)
+{
+    fseek(lex->file, 0L, SEEK_END);
+    lex->len = ftell(lex->file);
+    rewind(lex->file);
+}
 
 LexerStream lexer_stream_open(
     const char *file_path)
@@ -65,7 +131,12 @@ LexerStream lexer_stream_open(
     stream.line_index = 0;
     stream.column = 0;
     stream.line = 0;
+    read_len(&stream);
+
+    stream.cache_start = 0;
+    stream.cache_end = CACHE_SIZE;
     stream.cache = (char*)malloc(CACHE_SIZE);
+    populate_cache(&stream);
 
     return stream;
 }
@@ -78,24 +149,6 @@ void lexer_stream_close(
     
     if (stream->cache)
         free(stream->cache);
-}
-
-char lexer_read_char(
-    LexerStream *lex, 
-    int index)
-{
-    fseek(lex->file, index, SEEK_SET);
-    return fgetc(lex->file);
-}
-
-char *lexer_read_buffer(
-    LexerStream *lex,
-    int index, 
-    int len)
-{
-    fseek(lex->file, index, SEEK_SET);
-    fread(lex->cache, sizeof(char), len + 1, lex->file);
-    return lex->cache;
 }
 
 void lexer_read_string(
