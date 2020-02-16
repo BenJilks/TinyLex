@@ -103,11 +103,12 @@ static Node *parse_all_value(
     return node;
 }
 
-static Node *parse_value(
-    Stream *stream)
+static Node *make_value(
+    Stream *stream,
+    char from,
+    char to)
 {
     Node *node;
-    char c;
 
     node = malloc(sizeof(Node));
     node->left = NULL;
@@ -115,17 +116,35 @@ static Node *parse_value(
     node->operation = OPERATION_NONE;
 
     // Read a single char as a value
-    c = parser_next_char(stream);
     node->value_count = 1;
-    node->values[0] = (NodeValue) {c, c};
+    node->values[0] = (NodeValue) {from, to};
     return node;
+}
+
+static Node *parse_value(
+    Stream *stream)
+{
+    char c;
+
+    c = parser_next_char(stream);
+    return make_value(stream, c, c);
 }
 
 static Node *parse_escape(
     Stream *stream)
 {
+    char c;
+
     parser_match(stream, '\\');
-    return parse_value(stream);
+    c = parser_next_char(stream);
+    switch(c)
+    {
+        case 'n': return make_value(stream, '\n', '\n');
+        case 'd': return make_value(stream, '0', '9');
+//        case 's': return make_value(stream, '\n', ' ');
+        case 'w': return make_value(stream, 'A', 'z');
+        default: return make_value(stream, c, c);
+    }
 }
 
 // Parse single argument operations tailing a value

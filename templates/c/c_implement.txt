@@ -29,9 +29,12 @@ static MatchStatus NEXT_MATCH_NAME(
     token->len = 0;
 
     state = 0;
-    do
+    for (;;)
     {
         next_char = lexer_read_char(lex, lex->index);
+        if (next_char == -1)
+            break;
+
         next_state = table[state * CHAR_COUNT + next_char];
         printf("%u -%c-> %u\n", state, next_char, next_state);
 
@@ -63,7 +66,7 @@ static MatchStatus NEXT_MATCH_NAME(
 
         state = next_state;
         token->len += 1;
-    } while(next_char != EOF);
+    }
 
     // If there's nothing left, mark so
     if (lexer_read_char(lex, lex->index) == EOF)
