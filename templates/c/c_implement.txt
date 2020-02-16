@@ -36,7 +36,7 @@ static MatchStatus NEXT_MATCH_NAME(
             break;
 
         next_state = table[state * CHAR_COUNT + next_char];
-        printf("%u -%c-> %u\n", state, next_char, next_state);
+//        printf("%u -%c-> %u\n", state, next_char, next_state);
 
         lex->index += 1;
         lex->column += 1;
