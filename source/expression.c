@@ -19,22 +19,28 @@ typedef enum _OperationType
     OPERATION_ANY
 } OperationType;
 
-typedef struct _NodeValue
+typedef struct _NodeValueRange
 {
     char from;
     char to;
+} NodeValueRange;
+
+typedef struct _NodeValue
+{
+    NodeValueRange ranges[80];
+    int count;
+    int not;
 } NodeValue;
 
 typedef struct _Node
 {
     struct _Node *left, *right;
     OperationType operation;
-
-    NodeValue values[80];
-    int value_count;
+    NodeValue value;
 } Node;
 
-static Node *parse_expression_node(Stream *stream);
+static Node *parse_expression_node(
+    Stream *stream);
 
 static Node *parse_sub_expression(
     Stream *stream)
@@ -49,11 +55,118 @@ static Node *parse_sub_expression(
     return node;
 }
 
+static NodeValue make_value_range(
+    char from, char to)
+{
+    NodeValue value;
+    value.ranges[0] = (NodeValueRange) { from, to };
+    value.count = 1;
+    value.not = 0;
+    return value;
+}
+
+static NodeValue make_value(
+    char c)
+{
+    return make_value_range(c, c);
+}
+
+#define MAKE_VALUE_LIST(...) \
+{ \
+    int i; \
+    NodeValue value; \
+    char values[] = { __VA_ARGS__ }; \
+    value.count = sizeof(values) / sizeof(char); \
+    value.not = 0; \
+     \
+    for (i = 0; i < value.count; i++) \
+        value.ranges[i] = (NodeValueRange) { values[i], values[i] }; \
+    return value; \
+}
+
+static NodeValue parse_escape(
+    Stream *stream)
+{
+    char c;
+
+    parser_match(stream, '\\');
+    c = parser_next_char(stream);
+    switch(c)
+    {
+        case 'n': return make_value_range('\n', '\n');
+        case 'd': return make_value_range('0', '9');
+        case 's': MAKE_VALUE_LIST(' ', '\n', '\r', '\t');
+        case 'w': return make_value_range('A', 'z');
+        default: return make_value(c);
+    }
+}
+
+static NodeValue parse_value_char(
+    Stream *stream)
+{
+    switch (stream->look)
+    {
+        case '\\': return parse_escape(stream);
+        default: return make_value(parser_next_char(stream));
+    }
+}
+
+static NodeValue parse_range_value(
+    Stream *stream)
+{
+    NodeValue value;
+    value = parse_value_char(stream);
+
+    // If it's not already a range and there's 
+    // a '-' next, make it into one
+    if (value.count == 1 &&
+        value.ranges[0].from == value.ranges[0].to
+        && stream->look == '-')
+    {
+        parser_match(stream, '-');
+        value.ranges[0].to = parser_next_char(stream);
+    }
+
+    return value;
+}
+
+static NodeValue parse_range_expression(
+    Stream *stream)
+{
+    NodeValue value;
+    NodeValue curr;
+
+    value.count = 0;
+    value.not = 0;
+    if (stream->look == '^')
+    {
+        parser_match(stream, '^');
+        value.not = 1;
+    }
+
+    while (stream->look != ']'
+        && !stream->eof_flag)
+    {
+        int i;
+
+        // Parse single char range
+        curr = parse_range_value(stream);
+
+        // Add the range to the nodes value list
+        for (i = 0; i < curr.count; i++)
+        {
+            value.ranges[value.count] = curr.ranges[i];
+            value.count += 1;
+        }
+    }
+
+    return value;
+}
+
 // Parse a list of value ranges surrounded by '[' ']'
 static Node *parse_range(
     Stream *stream)
 {
-    char from, to;
     Node *node;
 
     // Create a new node with no operation
@@ -61,27 +174,10 @@ static Node *parse_range(
     node->left = NULL;
     node->right = NULL;
     node->operation = OPERATION_NONE;
-    node->value_count = 0;
 
     // While the ending bracket has not been reached, read a new range
     parser_match(stream, '[');
-    while (stream->look != ']' && !stream->eof_flag)
-    {
-        // Parse single char range
-        to = parser_next_char(stream);
-        from = to;
-
-        // If the next char is '-', then parse a range
-        if (stream->look == '-')
-        {
-            parser_match(stream, '-');
-            to = parser_next_char(stream);
-        }
-
-        // Add the range to the nodes value list
-        node->values[node->value_count] = (NodeValue) { from, to };
-        node->value_count += 1;
-    }
+    node->value = parse_range_expression(stream);
     parser_match(stream, ']');
 
     return node;
@@ -91,6 +187,7 @@ static Node *parse_all_value(
     Stream *stream)
 {
     Node *node;
+    NodeValue value;
 
     node = malloc(sizeof(Node));
     node->left = NULL;
@@ -98,15 +195,14 @@ static Node *parse_all_value(
     node->operation = OPERATION_NONE;
 
     parser_match(stream, '.');
-    node->value_count = 1;
-    node->values[0] = (NodeValue) {0, 127};
+    value.count = 1;
+    value.ranges[0] = (NodeValueRange) {0, 127};
+    node->value = value;
     return node;
 }
 
-static Node *make_value(
-    Stream *stream,
-    char from,
-    char to)
+static Node *parse_value(
+    Stream *stream)
 {
     Node *node;
 
@@ -116,35 +212,8 @@ static Node *make_value(
     node->operation = OPERATION_NONE;
 
     // Read a single char as a value
-    node->value_count = 1;
-    node->values[0] = (NodeValue) {from, to};
+    node->value = parse_value_char(stream);
     return node;
-}
-
-static Node *parse_value(
-    Stream *stream)
-{
-    char c;
-
-    c = parser_next_char(stream);
-    return make_value(stream, c, c);
-}
-
-static Node *parse_escape(
-    Stream *stream)
-{
-    char c;
-
-    parser_match(stream, '\\');
-    c = parser_next_char(stream);
-    switch(c)
-    {
-        case 'n': return make_value(stream, '\n', '\n');
-        case 'd': return make_value(stream, '0', '9');
-//        case 's': return make_value(stream, '\n', ' ');
-        case 'w': return make_value(stream, 'A', 'z');
-        default: return make_value(stream, c, c);
-    }
 }
 
 // Parse single argument operations tailing a value
@@ -192,7 +261,6 @@ static Node *parse_term(
     {
         case '(': node = parse_sub_expression(stream); break;
         case '[': node = parse_range(stream); break;
-        case '\\': node = parse_escape(stream); break;
         case '.': node = parse_all_value(stream); break;
         default: node = parse_value(stream); break;
     }
@@ -264,8 +332,8 @@ static EndingStates compile_node(Rule *table,
 static void copy_state(
     Rule *rule,
     int start,
-    int to,
-    int len)
+    int len,
+    int to)
 {
     int i;
 
@@ -273,12 +341,29 @@ static void copy_state(
         rule->table[start + i] = to;
 }
 
+static void invert_state(
+    Rule *rule,
+    int from,
+    int to)
+{
+    int index;
+    int i;
+
+    for (i = 0; i < CHAR_COUNT; i++)
+    {
+        index = from * CHAR_COUNT + i;
+        rule->table[index] = 
+            rule->table[index] == NONE ?
+            to : NONE;
+    }
+}
+
 static EndingStates compile_value(
     Rule *rule,
     Node *node, 
     EndingStates from_states)
 {
-    NodeValue value;
+    NodeValueRange value;
     int i, j, to;
 
     // Create the new state
@@ -288,9 +373,9 @@ static EndingStates compile_value(
     memset(rule->table + (rule->state_count - 1) * CHAR_COUNT, -1, sizeof(STATE_SIZE) * CHAR_COUNT);
 
     // Create transitions to the new state
-    for (i = 0; i < node->value_count; i++)
+    for (i = 0; i < node->value.count; i++)
     {
-        value = node->values[i];
+        value = node->value.ranges[i];
         for (j = 0; j < from_states.count; j++)
         {
             int start, len, from;
@@ -298,9 +383,18 @@ static EndingStates compile_value(
             from = from_states.states[j];
             start = from * CHAR_COUNT + value.from;
             len = value.to - value.from + 1;
-            copy_state(rule, start, to, len);
-//            memset(rule->table + start, to, sizeof(STATE_SIZE) * len);
+            copy_state(rule, start, len, to);
         }
+    }
+
+    // Invert state if not is set
+    for (j = 0; j < from_states.count; j++)
+    {
+        int from;
+
+        from = from_states.states[j];
+        if (node->value.not)
+            invert_state(rule, from, to);
     }
 
     return (EndingStates) { 1, to };

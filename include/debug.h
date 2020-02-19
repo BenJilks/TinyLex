@@ -2,7 +2,7 @@
 #define DEBUG_H
 
 #define DEBUG           0
-#define DEBUG_TABLE     1
+#define DEBUG_TABLE     0
 
 #if DEBUG
 
