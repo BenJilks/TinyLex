@@ -1,0 +1,7 @@
+project Test
+
+A		[a-c]
+B		[x-zD-E]
+C		[\-\]]
+D		[125-8]
+

@@ -1,0 +1,5 @@
+project Test
+
+A		[^a-cA-Cxy]
+B		[a-cA-Cxy]
+

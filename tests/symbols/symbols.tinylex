@@ -1,0 +1,15 @@
+project Test
+
+Add		\+
+Sub		\-
+Star		\*
+Question	\?
+Open		\(
+Close		\)
+OpenSquare	\[
+CloseSquare	\]
+BackSlash	\\
+
+Equals		=
+DoubleEquals	==
+

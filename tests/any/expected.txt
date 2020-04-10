@@ -1,0 +1,6 @@
+abc,A
+ac,A
+abbbbbc,A
+xyz,B
+z,B
+xyxyxyz,B

@@ -1,0 +1,13 @@
+a,B
+b,B
+c,B
+d,A
+e,A
+f,A
+A,B
+C,B
+B,B
+D,A
+z,A
+x,B
+y,B

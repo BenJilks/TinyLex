@@ -1,0 +1,7 @@
+project Test
+
+A		[\w]
+B		[\d]
+D		[\n]
+C		[\s]
+
