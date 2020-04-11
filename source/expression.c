@@ -454,13 +454,20 @@ static EndingStates compile_any(
     int i, j;
 
     ends = compile_node(rule, node->left, from);
-    for (i = 0; i < CHAR_COUNT; i++)
+    for (i = 0; i < from.count; i++)
     {
-        char to = rule->table[from.states[0] * CHAR_COUNT + i];
-        if (to != -1)
+        int from_state;
+        int to_state;
+        
+        from_state = from.states[i];
+        to_state = ends.states[0];
+        for (j = 0; j < CHAR_COUNT; j++)
         {
-            for (j = 0; j < ends.count; j++)
-                rule->table[ends.states[j] * CHAR_COUNT + i] = from.states[0];
+            int transition;
+            
+            transition = rule->table[from_state * CHAR_COUNT + j];
+            if (transition != -1)
+                rule->table[to_state * CHAR_COUNT + j] = transition;
         }
     }
 
