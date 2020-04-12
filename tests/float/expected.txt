@@ -1,0 +1,5 @@
+21.3,Float
+34.46f,Float
+64f,Float
+.42,Float
+.88f,Float

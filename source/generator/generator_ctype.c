@@ -54,5 +54,6 @@ static void gen_type_table(
     // Type tables
     fprintf(output, "\n\t#define STATE_COUNT %i\n", lex->table_size);
     fprintf(output, "\n\t#define TOKEN_COUNT %i\n", lex->rule_count);
+    fprintf(output, "\n\t#define CHAR_COUNT %i\n", CHAR_COUNT);
     FOR_EACH_TYPE("const char *type_names[]", "\"%s\"", exp->name);
 }

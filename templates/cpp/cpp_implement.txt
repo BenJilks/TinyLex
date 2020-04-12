@@ -6,7 +6,9 @@
 	}
 
     Lexer::Lexer(string file_path) :
-        in(file_in), eof_flag(false), index(0)
+        in(file_in), eof_flag(false), 
+        index(0), line_index(0),
+        line(1), column(1)
     {
         file_in = std::ifstream(file_path, std::ifstream::binary);
         if (!file_in.good())
@@ -50,70 +52,63 @@
 
     Lexer::MatchStatus Lexer::next_match(Token &token)
     {
-        int types_left = STATE_COUNT;
-        token.data = index;
-        token.length = 0;
+        unsigned int state, next_state;
+        char next_char, type;
 
-        // Reset state info
-        memset(states, 0, STATE_COUNT * sizeof(int));
-        memset(last_states, 0, STATE_COUNT * sizeof(int));
+        // Assign token info
+        look.data_index = index;
+        look.line_index = line_index;
+        look.line_no = line;
+        look.column_no = column;
+        look.len = 0;
 
-        // Read each char and check if it's a valid token, if not then stop checking
-        // Repeat until all tokens are no longer valid
-        while (types_left > 0 && !eof_flag)
+        state = 0;
+        for (;;)
         {
-            // Read the next char
-            char c = read_char(index++);
-
-            // Check to see if it marks the end of the file stream
-            if (c == EOF)
-            {
-                eof_flag = true;
+            next_char = read_char(index);
+            if (next_char == -1)
                 break;
-            }
 
-            // Go through each token
-            for (int i = 0; i < STATE_COUNT; i++)
+            next_state = table[state * CHAR_COUNT + next_char];
+#ifdef TINYLEX_DEBUG
+            printf("%u -%c-> %u\n", state, next_char, next_state);
+#endif
+
+            index += 1;
+            column += 1;
+            if (next_char == '\n')
             {
-                // Only check still valid tokens
-                if (states[i] != -1)
-                {
-                    // Find the next state
-                    states[i] = type_table[i][states[i] * 128 + c];
-
-                    // If the state is not valid, mark this
-                    if (states[i] == -1)
-                        types_left--;
-                }
+                line_index = index;
+                line += 1;
+                column = 1;
             }
 
-            // If there's tokens left, copy update the last state data
-            if (types_left > 0)
+            if (next_state == NONE)
             {
-                memcpy(last_states, states, STATE_COUNT * sizeof(int));
-                token.length += 1;
+                // If the end state is not valid, 
+                // there's no match
+                type = end_states[state];
+#ifdef TINYLEX_DEBUG
+                printf("Ending: %i -> %i\n", state, type);
+#endif
+                if (type == -1)
+                    break;
+
+                // Otherwise there is one, so return so
+                look.type_name = type_names[type];
+                look.type = (Token::TokenType)type;
+                index -= 1;
+                column -= 1;
+                return Lexer::MatchStatus::MATCH;
             }
+
+            state = next_state;
+            look.len += 1;
         }
 
-        // Find a valid token within the last valid state
-        for (int i = 0; i < STATE_COUNT; i++)
-        {
-            if (last_states[i] != -1)
-            {
-                // Check to see if the state is within on of the end states
-                for (int j = 0; j < type_end_state_count[i]; j++)
-                {
-                    if (type_end_states[i][j] == last_states[i])
-                    {
-                        // This is a valid token
-                        index -= 1;
-                        token.type = (Token::TokenType)i;
-                        token.type_name = type_names[i];
-                        return Lexer::MatchStatus::MATCH;
-                    }
-                }
-            }
-        }
+        // If there's nothing left, mark so
+        if (read_char(index) == EOF)
+            eof_flag = 1;
 
         // If no types match
         return Lexer::MatchStatus::BLANK;
@@ -161,7 +156,7 @@
         Error error;
         error.type = ErrorType::ParseError;
         error.message = msg;
-        error.index = token.data;
+        error.index = token.data_index;
         errors.push_back(error);
 
         error_flag = true;

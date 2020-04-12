@@ -1,4 +1,0 @@
-project TestProject
-
-Word        [a-zA-Z_]+
-Symbol      [^a-zA-Z_\s]+

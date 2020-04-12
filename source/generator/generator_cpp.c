@@ -18,10 +18,11 @@ static void gen_token_type(
     fprintf(output, "\t\t};");
 
     fprintf(output, "\n\t\tstatic const int count = %i;\n", lex->rule_count);
-    fprintf(output, "\t\tint data, length;\n");
+    fprintf(output, "\t\tint data_index, len;\n");
+    fprintf(output, "\t\tint line_index;\n");
 
     fprintf(output, "\n\t\tconst char *type_name;\n");
-    fprintf(output, "\t\tint line, column;\n");
+    fprintf(output, "\t\tint line_no, column_no;\n");
     fprintf(output, "\t\tTokenType type;\n");
     fprintf(output, "\t};");
 }

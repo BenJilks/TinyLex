@@ -12,8 +12,6 @@ void INIT_NAME(
         NEXT_NAME(lex);
 }
 
-#define CHAR_COUNT 128
-
 static MatchStatus NEXT_MATCH_NAME(
     LexerStream *lex)
 {

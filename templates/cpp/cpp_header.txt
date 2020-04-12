@@ -9,7 +9,7 @@
         char read_char(int index);
         char *read_buffer(int index, int len);
         string read_string(int index, int len);
-        string read_data(Token tk) { return read_string(tk.data, tk.length); }
+        string read_data(Token tk) { return read_string(tk.data_index, tk.len); }
 
         void error(string msg);
         void error(string msg, Token token);
@@ -47,7 +47,8 @@
         std::istream &in;
         std::ifstream file_in;
         char *cache;
-        int index;
+        int index, line_index;
+        int line, column;
 
         vector<Error> errors;
         bool eof_flag;

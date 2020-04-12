@@ -1,11 +1,14 @@
 #!/usr/bin/bash
 
-tinylex *.tinylex -l c -o lexer.h > /dev/null
-gcc -I./ ../test.c -o test
-./test > got.txt
+function run_lang
+{
+	tinylex *.tinylex -l $1 -o lexer.h > /dev/null
+	$2 -I./ ../$3 -o test
+	./test > got.txt
 
-[[ $(diff got.txt expected.txt) ]] &&
-	printf "failed" ||
-	printf "passed"
+	diff got.txt expected.txt
+	rm lexer.h test got.txt
+}
 
-rm lexer.h test got.txt
+run_lang c gcc test.c
+run_lang cpp g++ test.cpp
