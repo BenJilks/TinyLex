@@ -2,7 +2,7 @@
     Lexer::Lexer(std::istream &stream) :
         in(stream), eof_flag(false), index(0)
 	{
-        init();
+		init();
 	}
 
     Lexer::Lexer(string file_path) :
@@ -26,7 +26,6 @@
     void Lexer::init()
     {
         cache = new char[128];
-        next();
     }
 
     char Lexer::read_char(int index)
@@ -44,23 +43,24 @@
         return cache;
     }
 
-    string Lexer::read_string(int index, int len)
+    string Lexer::read_string(Token token)
     {
-        char *buffer = read_buffer(index, len);
-        return string(buffer, len);
+        char *buffer = read_buffer(token.data_index, token.len);
+        return string(buffer, token.len);
     }
 
-    Lexer::MatchStatus Lexer::next_match(Token &token)
+    std::optional<Token> Lexer::next_match()
     {
         unsigned int state, next_state;
         char next_char, type;
 
         // Assign token info
-        look.data_index = index;
-        look.line_index = line_index;
-        look.line_no = line;
-        look.column_no = column;
-        look.len = 0;
+		Token token;
+        token.data_index = index;
+        token.line_index = line_index;
+        token.line_no = line;
+        token.column_no = column;
+        token.len = 0;
 
         state = 0;
         for (;;)
@@ -95,15 +95,15 @@
                     break;
 
                 // Otherwise there is one, so return so
-                look.type_name = type_names[type];
-                look.type = (Token::TokenType)type;
+                token.type_name = type_names[type];
+                token.type = (Token::TokenType)type;
                 index -= 1;
                 column -= 1;
-                return Lexer::MatchStatus::MATCH;
+                return token;
             }
 
             state = next_state;
-            look.len += 1;
+            token.len += 1;
         }
 
         // If there's nothing left, mark so
@@ -111,44 +111,65 @@
             eof_flag = 1;
 
         // If no types match
-        return Lexer::MatchStatus::BLANK;
+        return std::nullopt;
     }
 
-    Token Lexer::next()
+    std::optional<Token> Lexer::next()
     {
-        Token last = look;
-
         // Find the next valid token
-        Lexer::MatchStatus status;
-        do
+        while (!eof_flag)
         {
-            status = next_match(look);
-        } while (status != Lexer::MatchStatus::MATCH && !eof_flag);
+            auto token = next_match();
+			if (token)
+				return token;
+        };
 
-        return last;
+		return std::nullopt;
     }
 
-    Token Lexer::match(Token::TokenType type, string name)
+    std::optional<Token> Lexer::consume(Token::TokenType type)
     {
-        // Check token type info
-        if (look.type != type)
-        {
-            error("Expected '" + name + "', got '" + 
-                string("lolz") + "' instead", look);
-        }
+		if (peek_queue.empty())
+		{
+			auto token = next();
+			if (!token)
+				return std::nullopt;
 
-        // Get the next token
-        return next();
+			if (token->type == type)
+				return token;
+
+			peek_queue.push_back(*token);
+			return std::nullopt;
+		}
+
+		auto token = peek_queue[0];
+		if (token.type != type)
+			return std::nullopt;
+
+		peek_queue.erase(peek_queue.begin());
+		return token;
     }
 
-    void Lexer::error(string msg)
+    std::optional<Token> Lexer::peek(int count)
+	{
+		while (count >= peek_queue.size())
+		{
+			auto token = next();
+			if (!token)
+				return std::nullopt;
+
+			peek_queue.push_back(*token);
+		}
+
+		return peek_queue[count];
+	}
+    
+	void Lexer::error(string msg)
     {
         Error error;
         error.type = ErrorType::IOError;
         error.message = msg;
         errors.push_back(error);
-
-        error_flag = true;
     }
 
     void Lexer::error(string msg, Token token)
@@ -158,8 +179,6 @@
         error.message = msg;
         error.index = token.data_index;
         errors.push_back(error);
-
-        error_flag = true;
     }
 
     void Lexer::report_errors(std::ostream &out)

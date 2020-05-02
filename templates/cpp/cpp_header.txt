@@ -8,16 +8,15 @@
 
         char read_char(int index);
         char *read_buffer(int index, int len);
-        string read_string(int index, int len);
-        string read_data(Token tk) { return read_string(tk.data_index, tk.len); }
+        string read_string(Token token);
 
         void error(string msg);
         void error(string msg, Token token);
         void report_errors(std::ostream &out = std::cout);
 
-        virtual Token next();
-        virtual Token match(Token::TokenType type, string name);
-        virtual const Token &get_look() const { return look; }
+        virtual std::optional<Token> next() override;
+        virtual std::optional<Token> consume(Token::TokenType type) override;
+        virtual std::optional<Token> peek(int count = 0) override;
         virtual bool is_eof() const { return eof_flag; }
 
     private:
@@ -27,7 +26,7 @@
             BLANK,
             ERROR
         };
-        MatchStatus next_match(Token &token);
+        std::optional<Token> next_match();
         void init();
 
         enum class ErrorType
@@ -52,6 +51,6 @@
 
         vector<Error> errors;
         bool eof_flag;
-        Token look;
+        std::vector<Token> peek_queue;
 
     };
